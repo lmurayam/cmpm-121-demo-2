@@ -27,29 +27,54 @@ const clear_button : HTMLButtonElement = document.createElement("button");
 clear_button.innerHTML = "clear"
 ui_elements.append(clear_button);
 clear_button.addEventListener("click",()=>{
-    ctx?.clearRect(0,0,canvas.width,canvas.height);
+    clearCanvas();
+    //I think in a lecture the prof said not to do this...
+    points.length=0;
 });
 
-//Source: https://quant-paint.glitch.me/paint0.html
+type point = [number,number];
 
+interface ICursor {
+    active: boolean;
+    point: point;
+}
 
-const cursor = {active: false, x:0, y:0};
+const cursor : ICursor = {active:false, point: [0,0]};
+
+const points : point[] = [];
+
+const drawing_changed : Event = new CustomEvent("drawing-changed");
 
 canvas.addEventListener("mousedown", (e)=>{
     cursor.active = true;
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
+    cursor.point = [e.offsetX,e.offsetY];
 });
-canvas.addEventListener("mouseup",()=>{
+addEventListener("mouseup",()=>{
     cursor.active=false;
 });
 canvas.addEventListener("mousemove",(e)=>{
-    if(cursor.active&&ctx!=null){
-        ctx.beginPath();
-        ctx.moveTo(cursor.x,cursor.y);
-        ctx.lineTo(e.offsetX,e.offsetY);
-        ctx.stroke();
-        cursor.x = e.offsetX;
-        cursor.y = e.offsetY;
+    if(cursor.active){
+        points.push(cursor.point);
+        points.push([e.offsetX,e.offsetY]);
+        cursor.point = [e.offsetX,e.offsetY]
+        canvas.dispatchEvent(drawing_changed);
     }
 });
+canvas.addEventListener("drawing-changed",()=>{
+    clearCanvas();
+    redrawCanvas();
+})
+
+function clearCanvas() {
+    ctx?.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function redrawCanvas(){
+    for(let i = 0; i<points.length;i+=2){
+        ctx?.beginPath();
+        ctx?.moveTo(...points[i]);
+        ctx?.lineTo(...points[i+1]);
+        ctx?.stroke();
+    }
+}
+
