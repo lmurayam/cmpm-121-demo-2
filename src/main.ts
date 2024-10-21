@@ -29,16 +29,16 @@ ui_elements.append(clear_button);
 clear_button.addEventListener("click",()=>{
     clearCanvas();
     //I think in a lecture the prof said not to do this...
-    lines.length=0;
-    redo_lines.length=0;
+    commands.length=0;
+    redo_commands.length=0;
 });
 
 const undo_button : HTMLButtonElement = document.createElement("button");
 undo_button.innerHTML = "undo"
 ui_elements.append(undo_button);
 undo_button.addEventListener("click",()=>{
-    const last_point = lines.pop();
-    if(last_point!=null){redo_lines.push(last_point)};
+    const last_command = commands.pop();
+    if(last_command!=null){redo_commands.push(last_command)};
     canvas.dispatchEvent(drawing_changed);
 });
 
@@ -46,14 +46,32 @@ const redo_button : HTMLButtonElement = document.createElement("button");
 redo_button.innerHTML = "redo"
 ui_elements.append(redo_button);
 redo_button.addEventListener("click",()=>{
-    const last_point = redo_lines.pop();
-    if(last_point!=null){lines.push(last_point)};
+    const last_command = redo_commands.pop();
+    if(last_command!=null){commands.push(last_command)};
     canvas.dispatchEvent(drawing_changed);
 });
 
 type point = [number,number];
 
-type line = point[];
+interface ILineCommand{
+    points: point[];
+    display(ctx : CanvasRenderingContext2D): void;
+}
+
+function createLineCommand(p : point){
+    const command : ILineCommand = {
+        points:[p],
+        display(ctx: CanvasRenderingContext2D){
+            ctx.beginPath();
+            ctx.moveTo(...this.points[0]);
+            this.points.forEach((point)=>{
+                ctx.lineTo(...point);
+            });
+            ctx.stroke();
+        }
+    }
+    return command;
+}
 
 interface ICursor {
     active: boolean;
@@ -62,30 +80,31 @@ interface ICursor {
 
 const cursor : ICursor = {active:false, point: [0,0]};
 
-const lines : line[] = [];
-const redo_lines: line[] = [];
+const commands : ILineCommand[] = [];
+const redo_commands: ILineCommand[] = [];
 
-let current_line : line = [];
+let current_command : ILineCommand | null = null;
 
 const drawing_changed : Event = new CustomEvent("drawing-changed");
 
 canvas.addEventListener("mousedown", (e)=>{
     cursor.active = true;
     cursor.point = [e.offsetX,e.offsetY];
-    current_line = [cursor.point];
-    lines.push(current_line);
+    current_command = createLineCommand(cursor.point);
+    commands.push(current_command);
     canvas.dispatchEvent(drawing_changed);
 
-    redo_lines.length = 0;
+    redo_commands.length = 0;
 });
 addEventListener("mouseup",()=>{
     cursor.active=false;
+    current_command = null;
     canvas.dispatchEvent(drawing_changed);
 });
 canvas.addEventListener("mousemove",(e)=>{
     if(cursor.active){
         cursor.point = [e.offsetX,e.offsetY];
-        current_line.push(cursor.point)
+        current_command?.points.push(cursor.point);
         canvas.dispatchEvent(drawing_changed);
     }
 });
@@ -99,13 +118,10 @@ function clearCanvas() {
 }
 
 function redrawCanvas(){
-    lines.forEach((line)=>{
-        ctx?.beginPath();
-        ctx?.moveTo(...line[0]);
-        line.forEach((point)=>{
-            ctx?.lineTo(...point);
-        })
-        ctx?.stroke();
+    commands.forEach((command)=>{
+        if(ctx!=null){
+            command.display(ctx);
+        }
     })
 }
 
