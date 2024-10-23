@@ -92,10 +92,21 @@ function createLineCommand(p : point, size: number){
 
 interface ICursor {
     active: boolean;
+    inside: boolean;
     point: point;
+    display(ctx : CanvasRenderingContext2D): void;
 }
+const cursor : ICursor = {active:false, inside: false, point: [0,0],
+    display(ctx: CanvasRenderingContext2D){
+        if(this.active!=true&&this.inside!=false){
+            ctx.beginPath();
+            ctx.arc(this.point[0],this.point[1], line_size/2, 0 ,2*Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+};
 
-const cursor : ICursor = {active:false, point: [0,0]};
 
 const commands : ILineCommand[] = [];
 const redo_commands: ILineCommand[] = [];
@@ -105,6 +116,7 @@ let current_command : ILineCommand | null = null;
 let line_size : number = 1;
 
 const drawing_changed : Event = new CustomEvent("drawing-changed");
+const tool_moved : Event = new CustomEvent("tool-moved");
 
 canvas.addEventListener("mousedown", (e)=>{
     cursor.active = true;
@@ -121,8 +133,11 @@ addEventListener("mouseup",()=>{
     canvas.dispatchEvent(drawing_changed);
 });
 canvas.addEventListener("mousemove",(e)=>{
-    if(cursor.active){
+    if(cursor.inside){
         cursor.point = [e.offsetX,e.offsetY];
+        dispatchEvent(tool_moved);
+    }
+    if(cursor.active){
         current_command?.points.push(cursor.point);
         canvas.dispatchEvent(drawing_changed);
     }
@@ -130,6 +145,24 @@ canvas.addEventListener("mousemove",(e)=>{
 canvas.addEventListener("drawing-changed",()=>{
     clearCanvas();
     redrawCanvas();
+})
+
+canvas.addEventListener("mouseover",()=>{
+    canvas.style.cursor = "none";
+    cursor.inside=true;
+})
+canvas.addEventListener("mouseout",()=>{
+    canvas.style.cursor = "default";
+    cursor.inside=false;
+    dispatchEvent(tool_moved);
+})
+
+addEventListener("tool-moved",()=>{
+    clearCanvas();
+    redrawCanvas();
+    if(ctx!=null){
+        cursor.display(ctx);
+    }
 })
 
 function clearCanvas() {
