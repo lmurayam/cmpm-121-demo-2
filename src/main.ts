@@ -51,17 +51,34 @@ redo_button.addEventListener("click",()=>{
     canvas.dispatchEvent(drawing_changed);
 });
 
+const thin_button : HTMLButtonElement = document.createElement("button");
+thin_button.innerHTML = "thin"
+ui_elements.append(thin_button);
+thin_button.addEventListener("click",()=>{
+    line_size = 1;
+});
+const thick_button : HTMLButtonElement = document.createElement("button");
+thick_button.innerHTML = "thick"
+ui_elements.append(thick_button);
+thick_button.addEventListener("click",()=>{
+    line_size = 5;
+});
+
+
 type point = [number,number];
 
 interface ILineCommand{
     points: point[];
+    line_width: number;
     display(ctx : CanvasRenderingContext2D): void;
 }
 
-function createLineCommand(p : point){
+function createLineCommand(p : point, size: number){
     const command : ILineCommand = {
         points:[p],
+        line_width: size,
         display(ctx: CanvasRenderingContext2D){
+            ctx.lineWidth = this.line_width;
             ctx.beginPath();
             ctx.moveTo(...this.points[0]);
             this.points.forEach((point)=>{
@@ -85,12 +102,14 @@ const redo_commands: ILineCommand[] = [];
 
 let current_command : ILineCommand | null = null;
 
+let line_size : number = 1;
+
 const drawing_changed : Event = new CustomEvent("drawing-changed");
 
 canvas.addEventListener("mousedown", (e)=>{
     cursor.active = true;
     cursor.point = [e.offsetX,e.offsetY];
-    current_command = createLineCommand(cursor.point);
+    current_command = createLineCommand(cursor.point,line_size);
     commands.push(current_command);
     canvas.dispatchEvent(drawing_changed);
 
