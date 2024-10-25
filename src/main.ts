@@ -27,7 +27,11 @@ app.append(ui_elements);
 function createButton(parent: HTMLElement, text: string, onClick: () => void) {
     const button: HTMLButtonElement = document.createElement("button");
     button.innerHTML = text;
-    button.addEventListener("click", onClick);
+    button.addEventListener("click", ()=>{
+        onClick();
+        clearCanvas();
+        redrawCanvas();
+    });
     parent.append(button);
 }
 
@@ -51,10 +55,25 @@ createButton(ui_elements,"redo",()=>{
 
 createButton(ui_elements,"thick",()=>{
     draw_size = 5;
+    current_sticker = null;
 });
 
 createButton(ui_elements,"thin",()=>{
     draw_size = 1;
+    current_sticker = null;
+});
+
+createButton(ui_elements,"😊",()=>{
+    current_sticker = "😊";
+    draw_size = 20;
+});
+createButton(ui_elements,"🍜",()=>{
+    current_sticker = "🍜";
+    draw_size = 20;
+});
+createButton(ui_elements,"🚗",()=>{
+    current_sticker = "🚗";
+    draw_size = 20;
 });
 
 type point = [number,number];
@@ -89,12 +108,42 @@ function createLineCommand(size: number){
                 ctx.lineTo(...point);
             });
             ctx.stroke();
+            ctx.lineWidth = 1;
         },
         display(ctx: CanvasRenderingContext2D){
-            ctx.save();
             this.place(ctx);
             this.drag(ctx);
-            ctx.restore();
+        }
+    }
+    return command;
+}
+
+function createStickerCommand(size: number, sticker: string){
+    const command : IDrawCommand = {
+        points:[],
+        size: size,
+        grow(p: point){
+            this.points.push(p);
+        },
+        place(ctx: CanvasRenderingContext2D){
+            ctx.font = `${size}px sans-serif`
+            const width = ctx.measureText(sticker).width
+            ctx.fillText(sticker, this.points[0][0] - width/2,this.points[0][1] + size/2);
+        },
+        drag(ctx: CanvasRenderingContext2D){
+            let last_point = this.points[0];
+            ctx.font = `${size}px sans-serif`
+            const width = ctx.measureText(sticker).width
+            this.points.forEach((point)=>{
+                if(calculateDistance(last_point,point)>size){
+                    ctx.fillText(sticker, point[0] - width/2, point[1] + size/2);
+                    last_point = point;
+                }
+            });
+        },
+        display(ctx: CanvasRenderingContext2D){
+            this.place(ctx);
+            this.drag(ctx);
         }
     }
     return command;
@@ -110,10 +159,17 @@ let draw_size : number = 1;
 function createCursor(p : point, s:number){
     const cursor : ICursor = {point: p, size: s,
         display(ctx: CanvasRenderingContext2D){
-            ctx.beginPath();
-            ctx.arc(this.point[0],this.point[1], s/2, 0 ,2*Math.PI);
-            ctx.fill();
-            ctx.stroke();
+            if(current_sticker==null){
+                ctx.beginPath();
+                ctx.arc(this.point[0],this.point[1], s/2, 0 ,2*Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            }
+            else{
+                ctx.font = `${s}px sans-serif`
+                const width = ctx.measureText(current_sticker).width
+                ctx.fillText(current_sticker, this.point[0] - width/2,this.point[1] + s/2);
+            }
         }
     };
     return cursor;
@@ -124,13 +180,14 @@ const commands : IDrawCommand[] = [];
 const redo_commands: IDrawCommand[] = [];
 
 let current_command : IDrawCommand | null = null;
+let current_sticker : string | null = null;
 let cursor : ICursor | null = null;
 
 const drawing_changed : Event = new CustomEvent("drawing-changed");
 const tool_moved : Event = new CustomEvent("tool-moved");
 
 canvas.addEventListener("mousedown", (e)=>{
-    current_command = createLineCommand(draw_size);
+    current_command = current_sticker == null ? createLineCommand(draw_size) : createStickerCommand(draw_size,current_sticker);
     current_command.grow([e.offsetX,e.offsetY]);
     commands.push(current_command);
     canvas.dispatchEvent(drawing_changed);
@@ -194,3 +251,12 @@ function redrawCanvas(){
     })
 }
 
+function calculateDistance(p1: point, p2: point): number {
+    const [x1, y1] = p1;
+    const [x2, y2] = p2;
+    
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    
+    return Math.sqrt(dx * dx + dy * dy);
+}
