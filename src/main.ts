@@ -23,6 +23,12 @@ const ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
 const ui_elements : HTMLHeadingElement = document.createElement("h4");
 app.append(ui_elements);
 
+const create_sticker_button : HTMLHeadingElement = document.createElement("h4");
+app.append(create_sticker_button);
+
+const sticker_buttons : HTMLHeadingElement = document.createElement("h4");
+app.append(sticker_buttons);
+
 
 function createButton(parent: HTMLElement, text: string, onClick: () => void) {
     const button: HTMLButtonElement = document.createElement("button");
@@ -33,6 +39,7 @@ function createButton(parent: HTMLElement, text: string, onClick: () => void) {
         redrawCanvas();
     });
     parent.append(button);
+    return button;
 }
 
 createButton(ui_elements,"clear",()=>{
@@ -63,17 +70,23 @@ createButton(ui_elements,"thin",()=>{
     current_sticker = null;
 });
 
-createButton(ui_elements,"😊",()=>{
-    current_sticker = "😊";
-    draw_size = 20;
+createButton(create_sticker_button,"Create Custom Sticker",()=>{
+    const answer : string | null= prompt("Custom sticker text","");
+    if(answer!=null&&answer!=""){
+        createButton(sticker_buttons,answer,()=>{
+            current_sticker = answer;
+            draw_size = 20;
+        });
+    }
 });
-createButton(ui_elements,"🍜",()=>{
-    current_sticker = "🍜";
-    draw_size = 20;
-});
-createButton(ui_elements,"🚗",()=>{
-    current_sticker = "🚗";
-    draw_size = 20;
+
+const stickers: string[] = ["😊","🍜","🚗"];
+
+stickers.forEach((sticker)=>{
+    createButton(sticker_buttons,sticker,()=>{
+        current_sticker = sticker;
+        draw_size = 20;
+    });
 });
 
 type point = [number,number];
