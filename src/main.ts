@@ -29,6 +29,9 @@ app.append(create_sticker_button);
 const sticker_buttons : HTMLHeadingElement = document.createElement("h4");
 app.append(sticker_buttons);
 
+const export_button : HTMLHeadingElement = document.createElement("h4");
+app.append(export_button);
+
 
 function createButton(parent: HTMLElement, text: string, onClick: () => void) {
     const button: HTMLButtonElement = document.createElement("button");
@@ -77,6 +80,22 @@ createButton(create_sticker_button,"Create Custom Sticker",()=>{
             current_sticker = answer;
             draw_size = 20;
         });
+    }
+});
+
+createButton(export_button,"EXPORT",()=>{
+    const temp : HTMLCanvasElement = document.createElement("canvas");
+    temp.width = temp.height = 1024;
+    const tctx : CanvasRenderingContext2D | null = temp.getContext("2d");
+    if(tctx!=null){
+        tctx.fillStyle = "white";
+        tctx.fillRect(0,0,temp.width,temp.height);
+        tctx.scale(4,4);
+        commands.forEach((command)=>{command.display(tctx);})
+        const anchor = document.createElement("a");
+        anchor.href = temp.toDataURL("image/png");
+        anchor.download = "sketchpad.png";
+        anchor.click();
     }
 });
 
