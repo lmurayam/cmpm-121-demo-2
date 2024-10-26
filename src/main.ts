@@ -20,17 +20,21 @@ app.append(canvas);
 
 const ctx : CanvasRenderingContext2D | null = canvas.getContext("2d");
 
-const ui_elements : HTMLHeadingElement = document.createElement("h4");
-app.append(ui_elements);
+function CreateNewHeader(){
+    const h = document.createElement("h4");
+    app.append(h);
+    return h;
+}
 
-const create_sticker_button : HTMLHeadingElement = document.createElement("h4");
-app.append(create_sticker_button);
+const ui_elements : HTMLHeadingElement = CreateNewHeader()
 
-const sticker_buttons : HTMLHeadingElement = document.createElement("h4");
-app.append(sticker_buttons);
+const pen_buttons : HTMLHeadingElement = CreateNewHeader()
 
-const export_button : HTMLHeadingElement = document.createElement("h4");
-app.append(export_button);
+const create_sticker_button : HTMLHeadingElement = CreateNewHeader()
+
+const sticker_buttons : HTMLHeadingElement = CreateNewHeader()
+
+const export_button : HTMLHeadingElement = CreateNewHeader()
 
 
 function createButton(parent: HTMLElement, text: string, onClick: () => void) {
@@ -41,6 +45,7 @@ function createButton(parent: HTMLElement, text: string, onClick: () => void) {
         clearCanvas();
         redrawCanvas();
     });
+    button.style.margin="2px"
     parent.append(button);
     return button;
 }
@@ -63,23 +68,27 @@ createButton(ui_elements,"redo",()=>{
     canvas.dispatchEvent(drawing_changed);
 });
 
-createButton(ui_elements,"thick",()=>{
-    draw_size = 5;
+createButton(pen_buttons,"thick",()=>{
+    draw_size = 7;
     current_sticker = null;
 });
 
-createButton(ui_elements,"thin",()=>{
+createButton(pen_buttons,"thin",()=>{
     draw_size = 1;
     current_sticker = null;
 });
 
+function createStickerButton(s : string){
+    createButton(sticker_buttons,s,()=>{
+        current_sticker = s;
+        draw_size = 30;
+    });
+}
+
 createButton(create_sticker_button,"Create Custom Sticker",()=>{
     const answer : string | null= prompt("Custom sticker text","");
     if(answer!=null&&answer!=""){
-        createButton(sticker_buttons,answer,()=>{
-            current_sticker = answer;
-            draw_size = 20;
-        });
+        createStickerButton(answer);
     }
 });
 
@@ -102,10 +111,7 @@ createButton(export_button,"EXPORT",()=>{
 const stickers: string[] = ["😊","🍜","🚗"];
 
 stickers.forEach((sticker)=>{
-    createButton(sticker_buttons,sticker,()=>{
-        current_sticker = sticker;
-        draw_size = 20;
-    });
+    createStickerButton(sticker);
 });
 
 type point = [number,number];
