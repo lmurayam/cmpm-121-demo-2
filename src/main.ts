@@ -237,6 +237,10 @@ function createCursor(p : point, s:number){
     return cursor;
 }
 
+function updateCursorPosition(e: MouseEvent, draw_size: number) {
+    cursor = createCursor([e.offsetX, e.offsetY], draw_size);
+    dispatchEvent(tool_moved);
+}
 
 const commands : IDrawCommand[] = [];
 const redo_commands: IDrawCommand[] = [];
@@ -270,8 +274,7 @@ canvas.addEventListener("mousedown", (e)=>{
     commands.push(current_command);
     canvas.dispatchEvent(drawing_changed);
 
-    cursor = createCursor([e.offsetX,e.offsetY],draw_size);
-    dispatchEvent(tool_moved);
+    updateCursorPosition(e, draw_size);
 
     redo_commands.length = 0;
 });
@@ -281,8 +284,7 @@ addEventListener("mouseup",(e)=>{
     }
     current_command = null;
     canvas.dispatchEvent(drawing_changed);
-    cursor = createCursor([e.offsetX,e.offsetY],draw_size);
-    dispatchEvent(tool_moved);
+    updateCursorPosition(e, draw_size);
 });
 canvas.addEventListener("mousemove",(e)=>{
     if(current_command!=null){
@@ -290,8 +292,7 @@ canvas.addEventListener("mousemove",(e)=>{
         canvas.dispatchEvent(drawing_changed);
     }
 
-    cursor = createCursor([e.offsetX,e.offsetY],draw_size);
-    dispatchEvent(tool_moved);
+    updateCursorPosition(e, draw_size);
 });
 canvas.addEventListener("drawing-changed",()=>{
     clearCanvas();
@@ -302,8 +303,7 @@ let cursor_in : boolean = false;
 canvas.addEventListener("mouseover",(e)=>{
     cursor_in = true;
     canvas.style.cursor = "none";
-    cursor = createCursor([e.offsetX,e.offsetY],draw_size);
-    dispatchEvent(tool_moved);
+    updateCursorPosition(e, draw_size);
 })
 canvas.addEventListener("mouseout",()=>{
     cursor_in = false;
@@ -348,7 +348,7 @@ function calculateDistance(p1: point, p2: point): number {
 }
 
 function scrollSlider(event: WheelEvent){ //scroll to affect slider - Vinh
-    let newVal = parseFloat(slider.value) + (event.deltaY*-0.1);
+    const newVal = parseFloat(slider.value) + (event.deltaY*-0.1);
     slider.value = newVal.toString();
     dispatchEvent(slider_changed); dispatchEvent(tool_moved);
 }
