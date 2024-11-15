@@ -251,7 +251,7 @@ slider.min= "0";
 slider.max="360";
 slider.defaultValue = "0";
 slider.addEventListener("input",()=>{
-    modifier=Number(slider.value);
+    dispatchEvent(slider_changed) //replaced the old code, modifier = slider.value, with a new event and function that handles it- Vinh
 })
 
 modifier_slider.append(slider);
@@ -260,6 +260,9 @@ let modifier : number = 0;
 
 const drawing_changed : Event = new CustomEvent("drawing-changed");
 const tool_moved : Event = new CustomEvent("tool-moved");
+const slider_changed : Event = new CustomEvent("slider-changed"); //new slider changed event - Vinh
+
+addEventListener("wheel", scrollSlider); //when using the mouse wheel, scrollSlider executes - Vinh
 
 canvas.addEventListener("mousedown", (e)=>{
     current_command = current_sticker == null ? createLineCommand(draw_size) : createStickerCommand(draw_size,current_sticker);
@@ -317,6 +320,11 @@ addEventListener("tool-moved",()=>{
     }
 })
 
+addEventListener("slider-changed", () => { //new Event, when slider changes update modifier - Vinh
+    modifier=Number(slider.value);
+    console.log(slider.value);
+});
+
 function clearCanvas() {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -337,4 +345,10 @@ function calculateDistance(p1: point, p2: point): number {
     const dy = y2 - y1;
     
     return Math.sqrt(dx * dx + dy * dy);
+}
+
+function scrollSlider(event: WheelEvent){ //scroll to affect slider - Vinh
+    let newVal = parseFloat(slider.value) + (event.deltaY*-0.1);
+    slider.value = newVal.toString();
+    dispatchEvent(slider_changed); dispatchEvent(tool_moved);
 }
